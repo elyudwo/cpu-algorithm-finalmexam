@@ -161,3 +161,90 @@ LNew < L || (rand() / (double)RAND_MAX)
 if (LNew > L || (rand() / (double)RAND_MAX) <= pow(e, -(L - LNew) / T))
 ```
 if문 안의 나중 에너지가 현재 에너지의 값보다 클때 또는 확률을 LNew-L이 아닌 L-Lnew로 바꿔주면 최대값을 구할 수 있습니다.
+
+
+## 3) 회귀식 추정
+
+회귀식 추정을 위해 산점도로 뿌려진 데이터를 가져올 필요가 있었습니다.
+
+좀 더 편리한 추정을 위해서 많은 데이터를 가지며 어느정도의 범위 내 비례 반비례 관계를 가지는 데이터가 필요했습니다.
+
+적당한 api를 찾던 도중 적절한 api 가 없어 서울시 공공데이터를 찾아보던 중 코로나 확진자 데이터가 적합해다 생각해 코로나 확진자 데이터를 통해 최적해를 찾아보겠습니다.
+
+```
+	ifstream readFile;
+	readFile.open("이영재.csv");
+	bool check = false;
+	string y1[250];
+	int y2[250];
+	int i = 0;
+	if (readFile.is_open()) {
+		while (!readFile.eof()) {
+			if (check) {
+				string str;
+				getline(readFile, str);
+				y1[i++] = str;
+			}
+			string str;
+			getline(readFile, str);
+			if (!check) {
+				check = true;
+			}
+		}
+		readFile.close();
+	}
+
+	for (int i = 0; i < 250; i++) {
+		y2[i] = stoi(y1[i]);
+	}
+```
+엑셀파일을 읽기위해 ifstream을 사용한뒤 csv파일을 read 해 주었습니다.
+y2 배열안의 stoi 함수를 이용해서 string 형으로 받은 데이터를 int형으로 바꿔 저장했습니다.
+
+코로나 확진자 데이터를 산점도로 나타낸 그림은 아래와 같습니다.
+
+![image](https://user-images.githubusercontent.com/97587573/173772984-cb404084-7979-493f-bf45-6cc8f9e350d7.png)
+
+```
+	time_t systime;
+	time(&systime);
+	srand((unsigned int)systime);
+	double cooling = 0.9;
+	const double e = 2.718281828;
+
+
+	int cnt = 0;
+	int cnt1 = 0;
+	
+	int x = 10;
+
+	cout << "처음 독립변수 = " << x << "\t, 값 F(x)= " << y2[x] << endl;
+
+	double L = y2[x];
+
+	for (double T = 80; T > 0.000008; T *= cooling)
+	{
+		cnt++;
+		int xNew = x + (rand()%10-1);
+		int LNew = y2[xNew];
+		if (LNew > L || (rand() / (double)RAND_MAX) <= pow(e, -(L - LNew) / T))
+		{
+			L = LNew;
+			x = xNew;
+			cnt1++;
+		}
+	}
+	cout << L
+```
+
+아까 사용했던 위의 모의 담금질 코드를 살짝 수정해주면 전역 최고점을 구할수 있습니다.
+
+수정된 점은 엑셀 파일을 읽을때 인덱스로 접근하였기 때문에 자료형 double로 설정한 값을 int로 바꿔주었습니다.
+
+또한 xNew값이 int 값으로 접근하기에 좀더 넓은 범위에서의 탐색이 필요하다 생각해 rand()%10-1로 값을 변경해주었습니다.
+
+이후 코드를 실행하면 산점도 그래프 상 최고점인 128375가 나오게됩니다.
+![image](https://user-images.githubusercontent.com/97587573/173774966-d34fcfb4-d6b1-4ea2-95d2-d6c8159806a8.png)
+
+## 3-2) 선형 회귀
+
